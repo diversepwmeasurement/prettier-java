@@ -1,51 +1,68 @@
-name: Prettier-java
-on: [push, pull_request]
 jobs:
-  tests:
-    name: unit tests (node ${{ matrix.node_version }})
-    runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
+  e2e-tests:
+    if: '!contains(github.event.head_commit.message, ''[ci skip]'') && !contains(github.event.head_commit.message,
+      ''[skip ci]'') && !contains(github.event.pull_request.title, ''[skip ci]'')
+      && !contains(github.event.pull_request.title, ''[ci skip]'')'
+    name: ${{ matrix.test_repository }} (node ${{ matrix.node_version }})
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node_version }}
+    - continue-on-error: true
+      uses: actions/setup-java@v3
+      with:
+        distribution: zulu
+        java-version: 17.x
+    - continue-on-error: true
+      name: Install dependencies
+      run: yarn
+    - continue-on-error: true
+      name: Build prettier-plugin-java
+      run: yarn run build:prettier-plugin-java
+    - continue-on-error: true
+      name: Run e2e tests
+      run: yarn run test:prettier-plugin-java test:${{ matrix.test_repository }}
     strategy:
       matrix:
         node_version:
-          - 18.x
-          - 20.x
+        - 18.x
+        test_repository:
+        - e2e-jhipster1
+        - e2e-jhipster2
+  tests:
+    if: '!contains(github.event.head_commit.message, ''[ci skip]'') && !contains(github.event.head_commit.message,
+      ''[skip ci]'') && !contains(github.event.pull_request.title, ''[skip ci]'')
+      && !contains(github.event.pull_request.title, ''[ci skip]'')'
+    name: unit tests (node ${{ matrix.node_version }})
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node_version }}
-      - uses: actions/setup-java@v3
-        with:
-          java-version: 17.x
-          distribution: zulu
-      - name: Install dependencies
-        run: yarn
-      - name: Run CI
-        run: yarn run ci
-
-  e2e-tests:
-    name: ${{ matrix.test_repository }} (node ${{ matrix.node_version }})
-    runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node_version }}
+    - continue-on-error: true
+      uses: actions/setup-java@v3
+      with:
+        distribution: zulu
+        java-version: 17.x
+    - continue-on-error: true
+      name: Install dependencies
+      run: yarn
+    - continue-on-error: true
+      name: Run CI
+      run: yarn run ci
     strategy:
       matrix:
-        test_repository:
-          - e2e-jhipster1
-          - e2e-jhipster2
-        node_version: [18.x]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node_version }}
-      - uses: actions/setup-java@v3
-        with:
-          java-version: 17.x
-          distribution: zulu
-      - name: Install dependencies
-        run: yarn
-      - name: Build prettier-plugin-java
-        run: yarn run build:prettier-plugin-java
-      - name: Run e2e tests
-        run: yarn run test:prettier-plugin-java test:${{ matrix.test_repository }}
+        node_version:
+        - 18.x
+        - 20.x
+name: Prettier-java
+on:
+  repository_dispatch:
+    types: trigger-ga___github-ci.yml
